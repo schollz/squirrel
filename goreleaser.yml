@@ -1,0 +1,27 @@
+project_name: squirrel
+build:
+  main: main.go
+  binary: squirrel
+  ldflags: -s -w -X main.Version="v{{.Version}}-{{.Date}}"
+  goos:
+    - linux
+  goarch:
+    - amd64
+    - arm
+    - arm64
+archive:
+  format: tar.gz
+  format_overrides:
+    - goos: windows
+      format: zip
+  name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
+  replacements:
+    amd64: 64bit
+    arm: ARM
+    arm64: ARM64
+    linux: Linux
+  files:
+    - README.md
+    - LICENSE
+release:
+draft: false
