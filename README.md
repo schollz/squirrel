@@ -1,19 +1,23 @@
-<p align="center">
-  <h1>squirrel</h1>
-  <br>
+# squirrel
+
 <a href="https://github.com/schollz/squirrel/releases/latest"><img src="https://img.shields.io/badge/version-v1.0.0-brightgreen.svg?style=flat-square" alt="Version"></a>
 <a href="https://travis-ci.org/schollz/squirrel"><img
 src="https://img.shields.io/travis/schollz/squirrel.svg?style=flat-square" alt="Build
 Status"></a> 
-</p>
-
-<p align="center"><code>curl https://raw.githubusercontent.com/schollz/squirrel/master/src/install/default.txt | bash</code></p>
 
 
 Downloading the web can be cumbersome if you end up with thousands or millions of files. This tool allows you to download websites directly into a file-based database in SQLite, since [SQlite performs faster than a filesystem](https://www.sqlite.org/fasterthanfs.html) for reading and writing.
 
 
 ## Install
+
+Download latest release:
+
+```
+$ curl https://raw.githubusercontent.com/schollz/squirrel/master/src/install/default.txt | bash
+```
+
+or build from source
 
 ```
 $ go get -v github.com/schollz/squirrel
