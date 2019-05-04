@@ -61,11 +61,10 @@ func Run() (err error) {
 	defer log.Flush()
 
 	app := cli.NewApp()
-	app.Name = "fbdb"
+	app.Name = "squirrel"
 	app.Version = "0.1.0"
 	app.Compiled = time.Now()
-	app.Usage = "easily and securely transfer stuff from one computer to another"
-	app.UsageText = "croc allows any two computers to directly and securely transfer files"
+	app.Usage = "download URLs directly into an SQLite database"
 	app.Flags = []cli.Flag{
 		cli.StringSliceFlag{Name: "headers,H", Usage: "headers to include"},
 		cli.BoolFlag{Name: "tor"},
