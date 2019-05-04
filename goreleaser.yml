@@ -23,5 +23,3 @@ archive:
   files:
     - README.md
     - LICENSE
-release:
-draft: false
