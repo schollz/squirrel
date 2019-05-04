@@ -33,6 +33,11 @@ func run() (err error) {
 		fmt.Printf("updated README to version %s\n", strings.Split(versionNew, "-")[0])
 	}
 
+	err = replaceInFile("src/cli/cli.go", `Version = "`, `"`, versionNew+"-"+versionHashNew)
+	if err == nil {
+		fmt.Printf("updated cli.go to version %s\n", versionNew)
+}
+
 	err = replaceInFile("src/install/default.txt", `squirrel_version="`, `"`, strings.Split(versionNew, "-")[0][1:])
 	if err == nil {
 		fmt.Printf("updated default.txt to version %s\n", strings.Split(versionNew, "-")[0][1:])
