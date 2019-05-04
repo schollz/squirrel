@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+#
+#  Adapted from https://github.com/caddyserver/getcaddy.com
+#
+#                  squirrel Installer Script
+#
+#   Homepage: https://schollz.com/software/squirrel
+#   Issues:   https://github.com/schollz/squirrel/issues
+#   Requires: bash, mv, rm, tr, type, curl/wget, base64, sudo (if not root)
+#             tar (or unzip on OSX and Windows)
+#
+# This script safely installs Caddy into your PATH (which may require
+# password authorization). Use it like this:
+#
+#	$ curl https://getsquirrel.schollz.com | bash
+#	 or
+#	$ wget -qO- https://getsquirrel.schollz.com | bash
+#
+# In automated environments, you may want to run as root.
+# If using curl, we recommend using the -fsSL flags.
+#
+# This should work on Mac, Linux, and BSD systems, and
+# hopefully Windows with Cygwin. Please open an issue if
+# you notice any bugs.
+#
+
+# [[ $- = *i* ]] && echo "Don't source this script!" && return 10
+
+install_squirrel()
+{
+	trap 'echo -e "Aborted, error $? in command: $BASH_COMMAND"; trap ERR; exit 1' ERR
+	install_path="/usr/local/bin"
+	squirrel_os="unsupported"
+	squirrel_arch="unknown"
+	squirrel_arm=""
+	squirrel_version="6.0.0"
+
+
+	# Termux on Android has $PREFIX set which already ends with /usr
+	if [[ -n "$ANDROID_ROOT" && -n "$PREFIX" ]]; then
+		install_path="$PREFIX/bin"
+	fi
+
+	# Fall back to /usr/bin if necessary
+	if [[ ! -d $install_path ]]; then
+		install_path="/usr/bin"
+	fi
+
+	# Not every platform has or needs sudo (https://termux.com/linux.html)
+	((EUID)) && [[ -z "$ANDROID_ROOT" ]] && sudo_cmd="sudo"
+
+	#########################
+	# Which OS and version? #
+	#########################
+
+	squirrel_bin="squirrel"
+	squirrel_dl_ext=".tar.gz"
+
+	# NOTE: `uname -m` is more accurate and universal than `arch`
+	# See https://en.wikipedia.org/wiki/Uname
+	unamem="$(uname -m)"
+	if [[ $unamem == *aarch64* ]]; then
+		squirrel_arch="ARM64"
+	elif [[ $unamem == *64* ]]; then
+		squirrel_arch="64bit"
+	elif [[ $unamem == *86* ]]; then
+		squirrel_arch="32bit"
+	elif [[ $unamem == *arm* ]]; then
+		squirrel_arch="ARM"
+	else
+		echo "Aborted, unsupported or unknown architecture: $unamem"
+		return 2
+	fi
+
+	unameu="$(tr '[:lower:]' '[:upper:]' <<<$(uname))"
+	if [[ $unameu == *DARWIN* ]]; then
+		squirrel_os="macOS"
+		vers=$(sw_vers)
+		version=${vers##*ProductVersion:}
+		IFS='.' read OSX_MAJOR OSX_MINOR _ <<<"$version"
+
+		# # Major
+		# if ((OSX_MAJOR < 10)); then
+		# 	echo "Aborted, unsupported OS X version (9-)"
+		# 	return 3
+		# fi
+		# if ((OSX_MAJOR > 10)); then
+		# 	echo "Aborted, unsupported OS X version (11+)"
+		# 	return 4
+		# fi
+
+		# # Minor
+		# if ((OSX_MINOR < 5)); then
+		# 	echo "Aborted, unsupported OS X version (10.5-)"
+		# 	return 5
+		# fi
+	elif [[ $unameu == *LINUX* ]]; then
+		squirrel_os="Linux"
+	elif [[ $unameu == *FREEBSD* ]]; then
+		squirrel_os="freebsd"
+	elif [[ $unameu == *NETBSD* ]]; then
+		squirrel_os="NetBSD"
+	elif [[ $unameu == *OPENBSD* ]]; then
+		squirrel_os="OpenBSD"
+	elif [[ $unameu == *WIN* || $unameu == MSYS* ]]; then
+		# Should catch cygwin
+		sudo_cmd=""
+		squirrel_os="Windows"
+		squirrel_dl_ext=".zip"
+		squirrel_bin=$squirrel_bin.exe
+	else
+		echo "Aborted, unsupported or unknown os: $uname"
+		return 6
+	fi
+	squirrel_file="squirrel_${squirrel_version}_${squirrel_os}-${squirrel_arch}${squirrel_dl_ext}"
+
+	########################
+	# Download and extract #
+	########################
+
+	squirrel_url="https://github.com/schollz/squirrel/releases/download/v${squirrel_version}/${squirrel_file}"
+	squirrel_checksum_url="https://github.com/schollz/squirrel/releases/download/v${squirrel_version}/squirrel_${squirrel_version}_checksums.txt"
+	echo "Downloading squirrel v${squirrel_version} (${squirrel_os} ${squirrel_arch})..."
+
+	type -p gpg >/dev/null 2>&1 && gpg=1 || gpg=0
+
+	# Use $PREFIX for compatibility with Termux on Android
+	dl="$PREFIX$squirrel_file"
+	dl_checksum="$squirrel_file.checksum"
+	rm -rf -- "$dl"
+	rm -rf -- "$dl_checksum"
+
+
+	if type -p curl >/dev/null 2>&1; then
+		curl -fsSL "$squirrel_url" -o "$dl"
+		curl -fsSL "$squirrel_checksum_url" -o "$dl_checksum"
+	elif type -p wget >/dev/null 2>&1; then
+		wget --quiet  "$squirrel_url" -O "$dl"
+		wget --quiet  "$squirrel_checksum_url" -O "$dl_checksum"
+	else
+		echo "Aborted, could not find curl or wget"
+		return 7
+	fi
+
+	echo "Verifying checksum..."
+	if [[ $unameu == *DARWIN* ]]; then
+		checksum="$(shasum -a 256 ${dl}) $squirrel_file"
+	else
+		checksum="$(sha256sum ${dl}) $squirrel_file"
+	fi
+	checksum_check="$(cat ${dl_checksum} | grep $squirrel_file) $squirrel_file"
+
+	if [[ "$s1" != "$s2" ]]; then
+		echo "${checksum}"
+		echo "${checksum_check}"
+		echo "checksums are not valid, exiting"
+		return 7
+	fi
+
+
+	echo "Extracting..."
+	case "$squirrel_file" in
+		*.zip)    unzip -o "$dl" "$squirrel_bin" -d "$PREFIX/tmp/" ;;
+		*.tar.gz) tar -xzf "$dl" -C "$PREFIX/tmp/" "$squirrel_bin" ;;
+	esac
+	chmod +x "$PREFIX/tmp/$squirrel_bin"
+
+	# Back up existing squirrel, if any found in path
+	if squirrel_path="$(type -p "$squirrel_bin")"; then
+		squirrel_backup="${squirrel_path}_old"
+		echo "Backing up $squirrel_path to $squirrel_backup"
+		echo "(Password may be required.)"
+		$sudo_cmd mv "$squirrel_path" "$squirrel_backup"
+	fi
+
+	echo "Putting squirrel in $install_path (may require password)"
+	$sudo_cmd mv "$PREFIX/tmp/$squirrel_bin" "$install_path/$squirrel_bin"
+	if setcap_cmd=$(PATH+=$PATH:/sbin type -p setcap); then
+		$sudo_cmd $setcap_cmd cap_net_bind_service=+ep "$install_path/$squirrel_bin"
+	fi
+	$sudo_cmd rm -- "$dl"
+	$sudo_cmd rm -- "$dl_checksum"
+
+	# check installation
+	$squirrel_bin -version
+
+	echo "Successfully installed"
+	trap ERR
+	return 0
+}
+
+install_squirrel "$@"
+
+
