@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/cihub/seelog"
 	"github.com/cretz/bine/tor"
 	"github.com/pkg/errors"
 	"github.com/schollz/fbdb"
+	log "github.com/schollz/logger"
 	"github.com/schollz/pluck/pluck"
 )
 
@@ -247,7 +247,6 @@ func (w *Get) cleanup(interrupted bool) {
 }
 
 func (w *Get) start() (err error) {
-	defer log.Flush()
 	defer w.cleanup(false)
 
 	log.Debugf("starting with params: %+v", w)
