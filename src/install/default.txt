@@ -33,7 +33,7 @@ install_squirrel()
 	squirrel_os="unsupported"
 	squirrel_arch="unknown"
 	squirrel_arm=""
-	squirrel_version="1.0.0"
+	squirrel_version="1.0.1"
 
 
 	# Termux on Android has $PREFIX set which already ends with /usr
