@@ -1,6 +1,6 @@
 # squirrel
 
-<a href="https://github.com/schollz/squirrel/releases/latest"><img src="https://img.shields.io/badge/version-v1.0.1-brightgreen.svg?style=flat-square" alt="Version"></a>
+<a href="https://github.com/schollz/squirrel/releases/latest"><img src="https://img.shields.io/badge/version-v1.0.2-brightgreen.svg?style=flat-square" alt="Version"></a>
 <a href="https://travis-ci.org/schollz/squirrel"><img
 src="https://img.shields.io/travis/schollz/squirrel.svg?style=flat-square" alt="Build
 Status"></a> 
