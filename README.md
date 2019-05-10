@@ -19,18 +19,24 @@ Downloading the web can be cumbersome if you end up with thousands or millions o
 
 ## Install
 
-Download latest release:
+Download [the latest release for your system](https://github.com/schollz/squirrel/releases/latest), or install a release from the command-line:
 
 ```
 $ curl https://getsquirrel.schollz.com | bash
 ```
 
-or build from source
+Or, you can [install Go](https://golang.org/dl/) and build from source (requires Go 1.11+): 
 
 ```
 $ go get -v github.com/schollz/squirrel
 ```
 
+
+Or, on macOS you can install the latest release with [Homebrew](https://brew.sh/): 
+
+```
+$ brew install schollz/tap/squirrel
+```
 
 ## Usage 
 
