@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/schollz/fbdb"
@@ -41,18 +40,15 @@ func Run() (err error) {
 		cli.BoolFlag{Name: "debug", Usage: "increase verbosity"},
 	}
 	app.Action = func(c *cli.Context) error {
-		if c.GlobalBool("dump") {
-			return dump(c)
-		}
-		return runget(c)
-	}
-	app.Before = func(c *cli.Context) error {
 		if c.GlobalBool("debug") {
 			log.SetLevel("trace")
 		} else {
 			log.SetLevel("warn")
 		}
-		return nil
+		if c.GlobalBool("dump") {
+			return dump(c)
+		}
+		return runget(c)
 	}
 
 	// ignore error so we don't exit non-zero and break gfmrun README example tests
@@ -99,6 +95,7 @@ func runget(c *cli.Context) (err error) {
 }
 
 func dump(c *cli.Context) (err error) {
+	start := time.Now()
 	_, err = os.Stat(c.GlobalString("db"))
 	if err != nil {
 		return
@@ -111,24 +108,43 @@ func dump(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	bar := progressbar.NewOptions(numFiles,
-		progressbar.OptionShowCount(),
-		progressbar.OptionShowIts(),
-	)
+	var bar *progressbar.ProgressBar
+	if !c.GlobalBool("debug") {
+		bar = progressbar.NewOptions(numFiles,
+			progressbar.OptionShowCount(),
+			progressbar.OptionShowIts(),
+		)
+		log.SetLevel("info")
+	}
+	log.Infof("dumping %s", c.GlobalString("db"))
 	for i := 0; i < numFiles; i++ {
-		bar.Add(1)
+		if !c.GlobalBool("debug") {
+			bar.Add(1)
+		}
 		var f fbdb.File
 		f, err = fs.GetI(i)
 		if err != nil {
 			return
 		}
-		pathname, filename := path.Split(strings.TrimSuffix(strings.TrimSpace(f.Name), "/"))
-		os.MkdirAll(pathname, 0755)
+		pathname, filename := path.Split(f.Name)
+		if filename == "" {
+			filename = "index.html"
+		}
+		log.Debugf("path: '%s', file: '%s'", pathname, filename)
+		if _, err = os.Stat(pathname); os.IsNotExist(err) {
+			err = os.MkdirAll(pathname, 0755)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+		}
 		err = ioutil.WriteFile(path.Join(pathname, filename), f.Data, 0644)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 	}
+	bar.Finish()
+	log.Infof("finished dumping %d records [%s]", numFiles, time.Since(start))
 	return
 }
