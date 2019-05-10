@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	log.SetLevel("debug")
+	log.SetLevel("trace")
 }
 
 func Run() (err error) {
@@ -48,7 +48,7 @@ func Run() (err error) {
 	}
 	app.Before = func(c *cli.Context) error {
 		if c.GlobalBool("debug") {
-			log.SetLevel("debug")
+			log.SetLevel("trace")
 		} else {
 			log.SetLevel("warn")
 		}
@@ -61,6 +61,7 @@ func Run() (err error) {
 
 func runget(c *cli.Context) (err error) {
 	w := get.Get{}
+	w.Debug = c.GlobalBool("debug")
 	w.DBName = c.GlobalString("db")
 	if c.Args().First() != "" {
 		w.URL = c.Args().First()
@@ -70,7 +71,7 @@ func runget(c *cli.Context) (err error) {
 		return errors.New("need to specify URL")
 	}
 	if c.GlobalBool("debug") {
-		log.SetLevel("debug")
+		log.SetLevel("trace")
 	} else if c.GlobalBool("quiet") {
 		log.SetLevel("error")
 	} else {

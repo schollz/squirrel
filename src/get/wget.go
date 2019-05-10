@@ -18,6 +18,7 @@ import (
 	"github.com/schollz/fbdb"
 	log "github.com/schollz/logger"
 	"github.com/schollz/pluck/pluck"
+	"github.com/schollz/progressbar/v2"
 )
 
 func (w *Get) Run() (err error) {
@@ -28,6 +29,7 @@ func (w *Get) Run() (err error) {
 }
 
 type Get struct {
+	Debug           bool
 	DBName          string
 	UseTor          bool
 	NoClobber       bool
@@ -40,6 +42,7 @@ type Get struct {
 	PluckerTOML     string
 	torconnection   []*tor.Tor
 	fs              *fbdb.FileSystem
+	bar             *progressbar.ProgressBar
 }
 
 type job struct {
@@ -52,6 +55,7 @@ type result struct {
 
 func New(g Get) (w *Get, err error) {
 	w = new(Get)
+	w.Debug = g.Debug
 	w.DBName = g.DBName
 	if w.DBName == "" {
 		w.DBName = "urls.db"
@@ -75,14 +79,14 @@ func (w *Get) getURL(id int, jobs <-chan job, results chan<- result) {
 		Timeout: 10 * time.Second,
 	}
 	defer func() {
-		log.Debugf("worker %d finished", id)
+		log.Tracef("worker %d finished", id)
 	}()
 
 RestartTor:
 	if w.UseTor {
 		// keep trying until it gets on
 		for {
-			log.Debugf("starting tor in worker %d", id)
+			log.Tracef("starting tor in worker %d", id)
 			// Wait at most a minute to start network and get
 			dialCtx, dialCancel := context.WithTimeout(context.Background(), 3000*time.Hour)
 			defer dialCancel()
@@ -110,7 +114,7 @@ RestartTor:
 				log.Warn(err)
 				continue
 			}
-			log.Debugf("worker %d IP: %s", id, bytes.TrimSpace(body))
+			log.Tracef("worker %d IP: %s", id, bytes.TrimSpace(body))
 			break
 		}
 	}
@@ -131,7 +135,7 @@ RestartTor:
 					return
 				}
 				if exists {
-					log.Infof("already saved %s", j.URL)
+					log.Debugf("already saved %s", j.URL)
 					return nil
 				}
 			}
@@ -160,7 +164,7 @@ RestartTor:
 			}
 
 			// check request's validity
-			log.Debugf("%d requested %s: %d %s", id, j.URL, resp.StatusCode, http.StatusText(resp.StatusCode))
+			log.Tracef("%d requested %s: %d %s", id, j.URL, resp.StatusCode, http.StatusText(resp.StatusCode))
 			if resp.StatusCode == 503 || resp.StatusCode == 403 {
 				err = fmt.Errorf("received %d code", resp.StatusCode)
 				if w.UseTor {
@@ -188,7 +192,7 @@ RestartTor:
 					return
 				}
 				body = []byte(plucker.ResultJSON())
-				log.Debugf("body: %s", body)
+				log.Tracef("body: %s", body)
 				if !bytes.Contains(body, []byte("{")) {
 					return fmt.Errorf("could not get anything")
 				}
@@ -201,7 +205,7 @@ RestartTor:
 			}
 			err = w.fs.Save(f)
 			if err == nil {
-				log.Infof("saved %s", j.URL)
+				log.Debugf("saved %s", j.URL)
 			}
 			return
 		}(j)
@@ -232,7 +236,7 @@ func (w *Get) cleanup(interrupted bool) {
 		for _, torFolder := range torFolders {
 			errRemove := os.RemoveAll(torFolder)
 			if errRemove == nil {
-				log.Debugf("removed %s", torFolder)
+				log.Tracef("removed %s", torFolder)
 			}
 		}
 	}
@@ -247,21 +251,22 @@ func (w *Get) cleanup(interrupted bool) {
 }
 
 func (w *Get) start() (err error) {
+	log.Infof("saving urls to '%s'", w.DBName)
 	defer w.cleanup(false)
 
-	log.Debugf("starting with params: %+v", w)
+	log.Tracef("starting with params: %+v", w)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for sig := range c {
 			// cleanup
-			log.Debug(sig)
+			log.Trace(sig)
 			w.cleanup(true)
 		}
 	}()
 
-	log.Debugf("opening %s", w.DBName)
+	log.Tracef("opening %s", w.DBName)
 	w.fs, err = fbdb.Open(w.DBName, fbdb.OptionCompress(w.CompressResults))
 	if err != nil {
 		panic(err)
@@ -279,12 +284,19 @@ func (w *Get) start() (err error) {
 
 	numURLs := 1
 	if w.FileWithList != "" {
-		log.Debug("counting number of lines")
+		log.Trace("counting number of lines")
 		numURLs, err = countLines(w.FileWithList)
 		if err != nil {
 			return
 		}
-		log.Debugf("found %d lines", numURLs)
+		log.Tracef("found %d lines", numURLs)
+	}
+
+	if !w.Debug {
+		w.bar = progressbar.NewOptions64(int64(numURLs),
+			progressbar.OptionShowIts(),
+			progressbar.OptionShowCount(),
+		)
 	}
 
 	jobs := make(chan job, numURLs)
@@ -311,7 +323,7 @@ func (w *Get) start() (err error) {
 				URL: strings.TrimSpace(scanner.Text()),
 			}
 		}
-		log.Debugf("sent %d jobs", numJobs)
+		log.Tracef("sent %d jobs", numJobs)
 
 		if errScan := scanner.Err(); errScan != nil {
 			log.Error(errScan)
@@ -325,13 +337,17 @@ func (w *Get) start() (err error) {
 	close(jobs)
 
 	// print out errors
-	log.Debugf("waiting for %d jobs", numJobs)
+	log.Tracef("waiting for %d jobs", numJobs)
 	for i := 0; i < numJobs; i++ {
+		if !w.Debug {
+			w.bar.Add(1)
+		}
 		a := <-results
 		if a.err != nil {
 			log.Warnf("problem with %s: %s", a.URL, a.err.Error())
 		}
 	}
+	w.bar.Finish()
 
 	return
 }

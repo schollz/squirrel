@@ -1,4 +1,5 @@
 package main
+
 //go:generate go run src/install/updateversion.go
 
 import (
