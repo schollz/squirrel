@@ -22,7 +22,7 @@ func Run() (err error) {
 
 	app := cli.NewApp()
 	app.Name = "squirrel"
-	app.Version = "v1.0.2-16db046"
+	app.Version = "v1.0.3-7820adc"
 	app.Compiled = time.Now()
 	app.Usage = "download URLs directly into an SQLite database"
 	app.Flags = []cli.Flag{
