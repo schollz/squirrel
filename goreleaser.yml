@@ -4,7 +4,9 @@ build:
   binary: squirrel
   ldflags: -s -w -X main.Version="v{{.Version}}-{{.Date}}"
   goos:
+    - darwin
     - linux
+    - windows
   goarch:
     - amd64
     - arm
@@ -20,6 +22,16 @@ archive:
     arm: ARM
     arm64: ARM64
     linux: Linux
-  files:
-    - README.md
-    - LICENSE
+    darwin: macOS
+    
+brew:
+  github:
+    owner: schollz
+    name: homebrew-tap
+  folder: Formula
+  description: "squirrel downloads URLs to a SQLite database."
+  homepage: "https://schollz.com/software/squirrel/"
+  install: |
+    bin.install "squirrel"
+  test: |
+    system "#{bin}/squirrel --version"
