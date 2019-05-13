@@ -4,7 +4,7 @@
     src=""
     width="408px" border="0" alt="squirrel">
 <br>
-<a href="https://github.com/schollz/squirrel/releases/latest"><img src="https://img.shields.io/badge/version-v1.0.4-brightgreen.svg?style=flat-square" alt="Version"></a>
+<a href="https://github.com/schollz/squirrel/releases/latest"><img src="https://img.shields.io/badge/version-v1.0.5-brightgreen.svg?style=flat-square" alt="Version"></a>
 <a href="https://travis-ci.org/schollz/squirrel"><img
 src="https://img.shields.io/travis/schollz/squirrel.svg?style=flat-square" alt="Build
 Status"></a> 
