@@ -68,6 +68,7 @@ func New(g Get) (w *Get, err error) {
 	w.CompressResults = g.CompressResults
 	w.NumWorkers = g.NumWorkers
 	w.PluckerTOML = g.PluckerTOML
+	w.Headers = g.Headers
 	return
 }
 
