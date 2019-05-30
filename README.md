@@ -31,15 +31,6 @@ On macOS you can install the latest release with [Homebrew](https://brew.sh/):
 $ brew install schollz/tap/squirrel
 ```
 
-
-On Windows you can install the latest release with [Scoop](https://scoop.sh/): 
-
-```
-$ scoop bucket add schollz-bucket https://github.com/schollz/scoop-bucket.git
-$ scoop install squirrel
-```
-
-
 Or, you can [install Go](https://golang.org/dl/) and build from source (requires Go 1.11+): 
 
 ```

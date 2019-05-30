@@ -35,11 +35,3 @@ brew:
     bin.install "squirrel"
   test: |
     system "#{bin}/squirrel --version"
-
-scoop:
-  bucket:
-    owner: schollz
-    name: scoop-bucket
-  homepage: "https://schollz.com/software/squirrel/"
-  description: "squirrel downloads URLs to a SQLite database."
-  license: MIT
