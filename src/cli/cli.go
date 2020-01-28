@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/schollz/fbdb"
@@ -130,6 +131,10 @@ func dump(c *cli.Context) (err error) {
 		if filename == "" {
 			filename = "index.html"
 		}
+		if !strings.Contains(filename, ".") {
+			pathname = path.Join(pathname, filename)
+			filename = "index.html"
+		}
 		log.Debugf("path: '%s', file: '%s'", pathname, filename)
 		if _, err = os.Stat(pathname); os.IsNotExist(err) {
 			err = os.MkdirAll(pathname, 0755)
@@ -140,7 +145,7 @@ func dump(c *cli.Context) (err error) {
 		}
 		err = ioutil.WriteFile(path.Join(pathname, filename), f.Data, 0644)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("could not write in folder '%s' with file '%s': %s", pathname, filename, err.Error())
 			continue
 		}
 	}
