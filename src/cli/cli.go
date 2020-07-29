@@ -35,6 +35,8 @@ func Run() (err error) {
 		cli.StringFlag{Name: "cookies,c"},
 		cli.BoolFlag{Name: "compressed"},
 		cli.BoolFlag{Name: "quiet,q"},
+		cli.BoolFlag{Name: "strip-js"},
+		cli.BoolFlag{Name: "strip-css"},
 		cli.IntFlag{Name: "workers,w", Value: 1},
 		cli.BoolFlag{Name: "dump", Usage: "dump database file to disk"},
 		cli.StringFlag{Name: "db", Usage: "name of SQLite database to use", Value: "urls.db"},
@@ -77,6 +79,8 @@ func runget(c *cli.Context) (err error) {
 	w.Headers = c.GlobalStringSlice("headers")
 	w.NoClobber = c.GlobalBool("no-clobber")
 	w.UseTor = c.GlobalBool("tor")
+	w.StripCSS = c.GlobalBool("strip-css")
+	w.StripJS = c.GlobalBool("strip-js")
 	w.CompressResults = c.GlobalBool("compressed")
 	w.NumWorkers = c.GlobalInt("workers")
 	w.Cookies = c.GlobalString("cookies")

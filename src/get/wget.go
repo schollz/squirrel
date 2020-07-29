@@ -13,13 +13,26 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/cretz/bine/tor"
 	"github.com/pkg/errors"
 	"github.com/schollz/fbdb"
 	log "github.com/schollz/logger"
 	"github.com/schollz/pluck/pluck"
 	"github.com/schollz/progressbar/v2"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/html"
 )
+
+var minifier *minify.M
+
+func init() {
+	minifier = minify.New()
+	minifier.Add("text/html", &html.Minifier{
+		KeepDefaultAttrVals: true,
+		KeepDocumentTags:    true,
+	})
+}
 
 func (w *Get) Run() (err error) {
 	if w.NumWorkers < 1 {
@@ -40,6 +53,8 @@ type Get struct {
 	CompressResults bool
 	NumWorkers      int
 	PluckerTOML     string
+	StripCSS        bool
+	StripJS         bool
 	torconnection   []*tor.Tor
 	fs              *fbdb.FileSystem
 	bar             *progressbar.ProgressBar
@@ -68,6 +83,8 @@ func New(g Get) (w *Get, err error) {
 	w.CompressResults = g.CompressResults
 	w.NumWorkers = g.NumWorkers
 	w.PluckerTOML = g.PluckerTOML
+	w.StripCSS = g.StripCSS
+	w.StripJS = g.StripJS
 	w.Headers = g.Headers
 	return
 }
@@ -181,6 +198,32 @@ RestartTor:
 				return
 			}
 
+			if w.StripCSS || w.StripJS {
+				doc, errD := goquery.NewDocumentFromReader(bytes.NewReader(body))
+				if errD != nil {
+					err = errD
+					return
+				}
+
+				if w.StripCSS {
+					doc.Find("style").ReplaceWithHtml("")
+				}
+				if w.StripJS {
+					doc.Find("script").ReplaceWithHtml("")
+				}
+				html, errD := doc.Html()
+				if errD != nil {
+					err = errD
+					return
+				}
+
+				s, errD := minifier.String("text/html", html)
+				if errD != nil {
+					err = errD
+					return
+				}
+				body = []byte(s)
+			}
 			if w.PluckerTOML != "" {
 				plucker, _ := pluck.New()
 				r := bufio.NewReader(bytes.NewReader(body))
