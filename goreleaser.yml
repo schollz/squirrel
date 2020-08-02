@@ -11,26 +11,28 @@ build:
     - amd64
     - arm
     - arm64
-archive:
-  format: tar.gz
-  format_overrides:
-    - goos: windows
-      format: zip
-  name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
-  replacements:
-    amd64: 64bit
-    arm: ARM
-    arm64: ARM64
-    linux: Linux
-    darwin: macOS
-brew:
-  github:
-    owner: schollz
-    name: homebrew-tap
-  folder: Formula
-  description: "squirrel downloads URLs to a SQLite database."
-  homepage: "https://schollz.com/software/squirrel/"
-  install: |
-    bin.install "squirrel"
-  test: |
-    system "#{bin}/squirrel --version"
+archives:
+  -
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
+    replacements:
+      amd64: 64bit
+      arm: ARM
+      arm64: ARM64
+      linux: Linux
+      darwin: macOS
+brews:
+  -
+    github:
+      owner: schollz
+      name: homebrew-tap
+    folder: Formula
+    description: "squirrel downloads URLs to a SQLite database."
+    homepage: "https://schollz.com/software/squirrel/"
+    install: |
+      bin.install "squirrel"
+    test: |
+      system "#{bin}/squirrel --version"
