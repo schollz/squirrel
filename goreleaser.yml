@@ -23,7 +23,6 @@ archive:
     arm64: ARM64
     linux: Linux
     darwin: macOS
-    
 brew:
   github:
     owner: schollz
